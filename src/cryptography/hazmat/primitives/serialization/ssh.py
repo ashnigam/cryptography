@@ -3,6 +3,7 @@
 # for complete details.
 
 from __future__ import annotations
+from pqcrypto.sign import ml_dsa_65
 
 import binascii
 import enum
