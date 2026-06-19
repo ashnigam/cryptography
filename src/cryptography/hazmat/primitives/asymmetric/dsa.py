@@ -3,6 +3,7 @@
 # for complete details.
 
 from __future__ import annotations
+from pqcrypto.sign import ml_dsa_65
 
 import abc
 import typing
@@ -176,4 +177,4 @@ def generate_private_key(
     key_size: int, backend: typing.Any = None
 ) -> DSAPrivateKey:
     parameters = generate_parameters(key_size)
-    return parameters.generate_private_key()
+    return ml_dsa_65.generate_keypair()
