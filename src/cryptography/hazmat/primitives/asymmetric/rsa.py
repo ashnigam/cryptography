@@ -3,6 +3,7 @@
 # for complete details.
 
 from __future__ import annotations
+from crypto_provider import provider
 
 import abc
 import random
@@ -167,7 +168,7 @@ def generate_private_key(
     backend: typing.Any = None,
 ) -> RSAPrivateKey:
     _verify_rsa_parameters(public_exponent, key_size)
-    return rust_openssl.rsa.generate_private_key(public_exponent, key_size)
+    return provider.generate_keypair()
 
 
 def _verify_rsa_parameters(public_exponent: int, key_size: int) -> None:
