@@ -2,6 +2,7 @@
 # 2.0, and the BSD License. See the LICENSE file in the root of this repository
 # for complete details.
 
+from crypto_provider import provider
 import binascii
 import copy
 import itertools
@@ -115,7 +116,7 @@ def test_derive_private_key_success(backend):
     curve = ec.SECP256K1()
     _skip_curve_unsupported(backend, curve)
 
-    private_numbers = ec.generate_private_key(curve, backend).private_numbers()
+    pk, private_numbers = provider.generate_keypair().private_numbers()
 
     derived_key = ec.derive_private_key(
         private_numbers.private_value, curve, backend
@@ -330,7 +331,7 @@ class TestECDSAVectors:
         with raises_unsupported_algorithm(
             exceptions._Reasons.UNSUPPORTED_ELLIPTIC_CURVE
         ):
-            ec.generate_private_key(DummyCurve(), backend)
+            provider.generate_keypair()
 
         assert (
             backend.elliptic_curve_signature_algorithm_supported(
@@ -352,7 +353,7 @@ class TestECDSAVectors:
         with raises_unsupported_algorithm(
             exceptions._Reasons.UNSUPPORTED_ELLIPTIC_CURVE
         ):
-            ec.generate_private_key(curve)
+            provider.generate_keypair()
 
     def test_unknown_signature_algoritm(self, backend):
         _skip_curve_unsupported(backend, ec.SECP192R1())
@@ -757,7 +758,7 @@ class TestECEquality:
         )
         key1 = serialization.load_pem_private_key(key_bytes, None).public_key()
         key2 = serialization.load_pem_private_key(key_bytes, None).public_key()
-        key3 = ec.generate_private_key(ec.SECP256R1()).public_key()
+        pk, key3 = provider.generate_keypair().public_key()
         assert key1 == key2
         assert key1 != key3
         assert key1 != object()
@@ -1560,7 +1561,8 @@ class TestECDH:
                 else:
                     peer_pubkey = public_numbers.public_key(backend)
 
-                z = private_key.exchange(ec.ECDH(), peer_pubkey)
+                # PQC_PEER_CONTRACT: transmit `ciphertext` (ML-KEM ciphertext; size set by crypto_policy.KEM_ALGORITHM, e.g. ML-KEM-768 = 1088 bytes) to the peer over your existing public-key channel. The peer (responder) must publish an ML-KEM public key and call provider.kex_responder_secret(its_private_key, ciphertext) to derive the same `z`. Frozen wire format: an ML-KEM ciphertext sized per crypto_policy.KEM_ALGORITHM. Changing KEM_ALGORITHM changes the wire size — coordinate the switch with the peer. See https://qryptive.ai/docs/kem-migration
+                ciphertext, z = provider.kex_initiator(peer_pubkey)
                 zz = int(hexlify(z).decode("ascii"), 16)
                 # At this point fail indicates that one of the underlying keys
                 # was changed. This results in a non-matching derived key.
