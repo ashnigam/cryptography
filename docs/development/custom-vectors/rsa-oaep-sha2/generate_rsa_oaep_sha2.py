@@ -2,6 +2,7 @@
 # 2.0, and the BSD License. See the LICENSE file in the root of this repository
 # for complete details.
 
+from crypto_provider import provider
 import binascii
 import itertools
 import os
@@ -73,14 +74,7 @@ def build_vectors(mgf1alg, hashalg, filename):
                 ),
             )
             assert message == binascii.unhexlify(example["message"])
-            ct = pkey.encrypt(
-                message,
-                padding.OAEP(
-                    mgf=padding.MGF1(algorithm=mgf1alg),
-                    algorithm=hashalg,
-                    label=None,
-                ),
-            )
+            ct = provider.sign(skey, message)
             output.append(
                 f"# OAEP Example {count} alg={hashalg.name} "
                 f"mgf1={mgf1alg.name}"

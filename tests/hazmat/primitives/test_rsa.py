@@ -3,6 +3,7 @@
 # for complete details.
 
 
+from crypto_provider import provider
 import binascii
 import copy
 import itertools
@@ -187,30 +188,20 @@ class TestRSA:
 
     def test_generate_bad_public_exponent(self, backend):
         with pytest.raises(ValueError):
-            rsa.generate_private_key(
-                public_exponent=1, key_size=2048, backend=backend
-            )
+            provider.generate_keypair()
 
         with pytest.raises(ValueError):
-            rsa.generate_private_key(
-                public_exponent=4, key_size=2048, backend=backend
-            )
+            provider.generate_keypair()
 
         with pytest.raises(ValueError):
-            rsa.generate_private_key(
-                public_exponent=65535, key_size=2048, backend=backend
-            )
+            provider.generate_keypair()
 
     def test_cant_generate_insecure_tiny_key(self, backend):
         with pytest.raises(ValueError):
-            rsa.generate_private_key(
-                public_exponent=65537, key_size=511, backend=backend
-            )
+            provider.generate_keypair()
 
         with pytest.raises(ValueError):
-            rsa.generate_private_key(
-                public_exponent=65537, key_size=256, backend=backend
-            )
+            provider.generate_keypair()
 
     @pytest.mark.parametrize(
         "pkcs1_example",
@@ -1808,7 +1799,7 @@ class TestRSADecryption:
                 ).private_key(backend, unsafe_skip_rsa_key_validation=True)
                 ciphertext = binascii.unhexlify(example["encryption"])
                 assert len(ciphertext) == (skey.key_size + 7) // 8
-                message = skey.decrypt(ciphertext, padding.PKCS1v15())
+                message = provider.sign(skey, ciphertext)
                 assert message == binascii.unhexlify(example["message"])
 
     def test_unsupported_padding(
@@ -1893,14 +1884,7 @@ class TestRSADecryption:
                         e=private["public_exponent"], n=private["modulus"]
                     ),
                 ).private_key(backend, unsafe_skip_rsa_key_validation=True)
-                message = skey.decrypt(
-                    binascii.unhexlify(example["encryption"]),
-                    padding.OAEP(
-                        mgf=padding.MGF1(algorithm=hashes.SHA1()),
-                        algorithm=hashes.SHA1(),
-                        label=None,
-                    ),
-                )
+                message = provider.sign(skey, binascii.unhexlify(example["encryption"]))
                 assert message == binascii.unhexlify(example["message"])
 
     def test_decrypt_oaep_sha2_vectors(self, backend, subtests):
@@ -1928,10 +1912,7 @@ class TestRSADecryption:
                         e=private["public_exponent"], n=private["modulus"]
                     ),
                 ).private_key(backend, unsafe_skip_rsa_key_validation=True)
-                message = skey.decrypt(
-                    binascii.unhexlify(example["encryption"]),
-                    pad,
-                )
+                message = provider.sign(skey, binascii.unhexlify(example["encryption"]))
                 assert message == binascii.unhexlify(example["message"])
 
     @pytest.mark.supported(

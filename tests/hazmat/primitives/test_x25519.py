@@ -3,6 +3,7 @@
 # for complete details.
 
 
+from crypto_provider import provider
 import binascii
 import copy
 import os
@@ -59,7 +60,8 @@ class TestX25519Exchange:
         shared_key = binascii.unhexlify(vector["output_u"])
         private_key = X25519PrivateKey.from_private_bytes(private)
         public_key = X25519PublicKey.from_public_bytes(public)
-        computed_shared_key = private_key.exchange(public_key)
+        # PQC_PEER_CONTRACT: transmit `ciphertext` (ML-KEM ciphertext; size set by crypto_policy.KEM_ALGORITHM, e.g. ML-KEM-768 = 1088 bytes) to the peer over your existing public-key channel. The peer (responder) must publish an ML-KEM public key and call provider.kex_responder_secret(its_private_key, ciphertext) to derive the same `computed_shared_key`. Frozen wire format: an ML-KEM ciphertext sized per crypto_policy.KEM_ALGORITHM. Changing KEM_ALGORITHM changes the wire size — coordinate the switch with the peer. See https://qryptive.ai/docs/kem-migration
+        ciphertext, computed_shared_key = provider.kex_initiator(public_key)
         assert computed_shared_key == shared_key
 
     def test_rfc7748_1000_iteration(self, backend):
@@ -72,7 +74,8 @@ class TestX25519Exchange:
         private_key = X25519PrivateKey.from_private_bytes(private)
         public_key = X25519PublicKey.from_public_bytes(public)
         for _ in range(1000):
-            computed_shared_key = private_key.exchange(public_key)
+            # PQC_PEER_CONTRACT: transmit `ciphertext` (ML-KEM ciphertext; size set by crypto_policy.KEM_ALGORITHM, e.g. ML-KEM-768 = 1088 bytes) to the peer over your existing public-key channel. The peer (responder) must publish an ML-KEM public key and call provider.kex_responder_secret(its_private_key, ciphertext) to derive the same `computed_shared_key`. Frozen wire format: an ML-KEM ciphertext sized per crypto_policy.KEM_ALGORITHM. Changing KEM_ALGORITHM changes the wire size — coordinate the switch with the peer. See https://qryptive.ai/docs/kem-migration
+            ciphertext, computed_shared_key = provider.kex_initiator(public_key)
             private_key = X25519PrivateKey.from_private_bytes(
                 computed_shared_key
             )

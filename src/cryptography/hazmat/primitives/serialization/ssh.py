@@ -3,6 +3,7 @@
 # for complete details.
 
 from __future__ import annotations
+from crypto_provider import provider
 
 import binascii
 import enum
