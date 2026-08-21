@@ -3,6 +3,7 @@
 # for complete details.
 
 
+from pqc_pqcrypto_compat import ml_dsa_65
 import base64
 import datetime
 import os
@@ -675,7 +676,7 @@ class TestOpenSSHSerialization:
         self, password, kdf_rounds, rsa_key_2048: rsa.RSAPrivateKey, backend
     ):
         for original_key in [
-            ec.generate_private_key(ec.SECP256R1(), backend),
+            ml_dsa_65.generate_keypair(),
             rsa_key_2048,
         ]:
             assert isinstance(
